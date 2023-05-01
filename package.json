@@ -1,0 +1,17 @@
+{
+  "name": "crypto-pet",
+  "version": "1.0.0",
+  "description": "pet",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "w33d",
+  "license": "MIT",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.8.3"
+  }
+}
