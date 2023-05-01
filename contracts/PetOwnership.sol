@@ -15,8 +15,15 @@ contract PetOwnership is ERC721Enumerable, Ownable, Cooldowns {
 
     function createPet(uint256 _genes) external onlyOwner {
         uint256 newPetId = pets.length;
+        uint8 color = uint8(_genes & 0xFF);
+        uint8 size = uint8((_genes >> 8) & 0xFF);
+        uint8 pattern = uint8((_genes >> 16) & 0xFF);
+
         PetBase.Pet memory _newPet = PetBase.Pet({
             genes: _genes,
+            color: color,
+            size: size,
+            pattern: pattern,
             birthTime: uint64(block.timestamp),
             matronId: 0,
             sireId: 0,
@@ -27,6 +34,7 @@ contract PetOwnership is ERC721Enumerable, Ownable, Cooldowns {
         pets.push(_newPet);
         _mint(msg.sender, newPetId);
     }
+
 
     function breed(uint256 _matronId, uint256 _sireId) public {
         require(_owns(msg.sender, _matronId), "Caller does not own the matron pet");
@@ -40,7 +48,8 @@ contract PetOwnership is ERC721Enumerable, Ownable, Cooldowns {
         require(matron.canBreedWith(sire), "Pets cannot breed with each other");
 
         uint256 newPetId = pets.length;
-        PetBase.Pet memory newPet = matron.giveBirth(sire, newPetId, cooldowns);
+        uint32[] memory _cooldowns = _getCooldowns();
+        PetBase.Pet memory newPet = matron.giveBirth(sire, newPetId, _cooldowns);
         pets.push(newPet);
 
         _mint(msg.sender, newPetId);
@@ -61,6 +70,14 @@ contract PetOwnership is ERC721Enumerable, Ownable, Cooldowns {
         sireId = pet.sireId;
         generation = pet.generation;
         cooldownEndBlock = pet.cooldownEndBlock;
+    }
+
+    function _getCooldowns() internal view returns (uint32[] memory) {
+        uint32[] memory _cooldowns = new uint32[](cooldowns.length);
+        for (uint256 i = 0; i < cooldowns.length; i++) {
+            _cooldowns[i] = cooldowns[i];
+        }
+        return _cooldowns;
     }
 
     function _owns(address _claimant, uint256 _tokenId) internal view returns (bool) {

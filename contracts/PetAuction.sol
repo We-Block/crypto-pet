@@ -78,6 +78,42 @@ contract PetAuction is ReentrancyGuard, Ownable {
         emit AuctionBid(_petId, msg.sender, _bidAmount);
     }
 
-    function endAuction(uint256 _petId) external nonReentrant {
+        function endAuction(uint256 _petId) external nonReentrant {
         Auction storage auction = auctions[_petId];
-        require(block.number
+        require(block.number > auction.endBlock, "Auction has not ended yet");
+        require(auction.seller == msg.sender || auction.highestBidder == msg.sender, "Only the seller or highest bidder can end the auction");
+
+        if (auction.highestBidder != address(0)) {
+            // Transfer the winning bid amount to the seller
+            tokenContract.transfer(auction.seller, auction.highestBid);
+
+            // Transfer the pet to the highest bidder
+            petContract.transferFrom(auction.seller, auction.highestBidder, _petId);
+
+            emit AuctionEnded(_petId, auction.highestBidder, auction.highestBid);
+        } else {
+            // No bids were made, allow the pet to be returned to the seller
+            petContract.transferFrom(auction.seller, auction.seller, _petId);
+            emit AuctionEnded(_petId, address(0), 0);
+        }
+
+        // Remove the auction from storage
+        delete auctions[_petId];
+    }
+
+    function getAuction(uint256 _petId) external view returns (
+        address seller,
+        uint256 startPrice,
+        uint256 endBlock,
+        address highestBidder,
+        uint256 highestBid
+    ) {
+        Auction storage auction = auctions[_petId];
+        seller = auction.seller;
+        startPrice = auction.startPrice;
+        endBlock = auction.endBlock;
+        highestBidder = auction.highestBidder;
+        highestBid = auction.highestBid;
+    }
+}
+
